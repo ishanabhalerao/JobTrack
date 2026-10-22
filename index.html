@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>JobTrack — Application & Pipeline Tracker</title>
+  <meta name="description" content="A minimalist tracker for student club and internship applications." />
+  <meta name="theme-color" content="#0b0f1a" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          colors: {
+            ink: { 950: '#0b0f1a', 900: '#0f1524', 800: '#151c2f', 700: '#1e2740' }
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body class="min-h-full bg-ink-950 font-sans text-slate-200 antialiased">
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <div class="relative mx-auto flex min-h-screen max-w-7xl flex-col px-4 pb-16 pt-6 sm:px-6 lg:px-8">
+
+    <!-- Header -->
+    <header class="flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 shadow-lg shadow-indigo-500/30">
+          <i class="fa-solid fa-bullseye text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight text-white">JobTrack</h1>
+          <p class="text-xs text-slate-400">Every application. One window.</p>
+        </div>
+      </div>
+      <button id="open-modal-btn" type="button"
+        class="btn-primary group inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white">
+        <i class="fa-solid fa-plus transition-transform group-hover:rotate-90"></i>
+        Add Application
+        <kbd class="ml-1 hidden rounded bg-white/15 px-1.5 py-0.5 text-[10px] font-medium sm:inline">N</kbd>
+      </button>
+    </header>
+
+    <!-- Summary metrics -->
+    <section aria-label="Summary" class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <article class="glass-card metric-card">
+        <div class="metric-icon bg-indigo-500/15 text-indigo-300"><i class="fa-solid fa-layer-group"></i></div>
+        <div>
+          <p class="metric-label">Total Applications</p>
+          <p id="metric-total" class="metric-value">0</p>
+        </div>
+      </article>
+      <article class="glass-card metric-card">
+        <div class="metric-icon bg-amber-500/15 text-amber-300"><i class="fa-solid fa-comments"></i></div>
+        <div>
+          <p class="metric-label">Active Interviews</p>
+          <p id="metric-interviews" class="metric-value">0</p>
+        </div>
+      </article>
+      <article id="metric-due-card" class="glass-card metric-card">
+        <div id="metric-due-icon" class="metric-icon bg-emerald-500/15 text-emerald-300"><i class="fa-solid fa-bell"></i></div>
+        <div>
+          <p class="metric-label">Follow-ups Due</p>
+          <p id="metric-due" class="metric-value">0</p>
+          <p id="metric-due-sub" class="text-[11px] text-slate-500">Nothing due today</p>
+        </div>
+      </article>
+    </section>
+
+    <!-- Controls -->
+    <section aria-label="View controls" class="mt-8 flex flex-wrap items-center justify-between gap-3">
+      <div id="filter-group" role="tablist" aria-label="Filter by type"
+        class="inline-flex rounded-xl border border-white/10 bg-white/5 p-1 backdrop-blur">
+        <button type="button" role="tab" data-filter="all" class="filter-btn active">All</button>
+        <button type="button" role="tab" data-filter="Club" class="filter-btn">Clubs Only</button>
+        <button type="button" role="tab" data-filter="Internship" class="filter-btn">Internships Only</button>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-500"></i>
+          <input id="search-input" type="search" placeholder="Search company or role"
+            class="field !w-48 !pl-8 sm:!w-64" autocomplete="off" />
+        </div>
+        <div id="layout-group" class="inline-flex rounded-xl border border-white/10 bg-white/5 p-1" role="group" aria-label="Layout">
+          <button type="button" data-layout="board" class="layout-btn active" title="Board view" aria-label="Board view">
+            <i class="fa-solid fa-table-columns"></i>
+          </button>
+          <button type="button" data-layout="list" class="layout-btn" title="List view" aria-label="List view">
+            <i class="fa-solid fa-list"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Board -->
+    <main id="board" class="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4" aria-live="polite"></main>
+
+    <!-- Empty state -->
+    <section id="empty-state" class="hidden flex-1 items-center justify-center py-16">
+      <div class="glass-card mx-auto max-w-md p-10 text-center">
+        <div class="empty-illustration mx-auto mb-6">
+          <i class="fa-solid fa-paper-plane"></i>
+        </div>
+        <h2 class="text-lg font-semibold text-white" id="empty-title">No applications yet</h2>
+        <p class="mt-2 text-sm leading-relaxed text-slate-400" id="empty-text">
+          Add your first club or internship application. It takes under 10 seconds, and everything stays in your browser.
+        </p>
+        <button id="empty-add-btn" type="button"
+          class="btn-primary mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white">
+          <i class="fa-solid fa-plus"></i> Add your first application
+        </button>
+      </div>
+    </section>
+
+    <footer class="mt-auto pt-12 text-center text-xs text-slate-600">
+      <i class="fa-solid fa-lock mr-1"></i>
+      Your data never leaves this browser. Clearing site data will erase it.
+    </footer>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-panel glass-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="mb-5 flex items-start justify-between">
+        <div>
+          <h2 id="modal-title" class="text-lg font-semibold text-white">Add Application</h2>
+          <p class="text-xs text-slate-400">Press Enter to save, Esc to close.</p>
+        </div>
+        <button id="close-modal-btn" type="button" class="icon-btn" aria-label="Close dialog">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="app-form" novalidate class="space-y-4">
+        <div>
+          <label for="company" class="label">Company / Organization</label>
+          <input id="company" name="company" type="text" maxlength="80" required
+            class="field" placeholder="e.g. Goldman Sachs, Kelley Investment Club" autocomplete="off" />
+          <p class="error-text" data-error-for="company"></p>
+        </div>
+
+        <div>
+          <label for="role" class="label">Role / Title</label>
+          <input id="role" name="role" type="text" maxlength="80" required
+            class="field" placeholder="e.g. Summer Analyst" autocomplete="off" />
+          <p class="error-text" data-error-for="role"></p>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div>
+            <label for="type" class="label">Type</label>
+            <select id="type" name="type" class="field">
+              <option value="Club">Club</option>
+              <option value="Internship">Internship</option>
+            </select>
+          </div>
+          <div>
+            <label for="status" class="label">Status</label>
+            <select id="status" name="status" class="field">
+              <option value="Applied">Applied</option>
+              <option value="Interviewing">Interviewing</option>
+              <option value="Offer">Offer</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label for="nextDate" class="label">Next Action Date <span class="text-slate-500">(optional)</span></label>
+          <input id="nextDate" name="nextDate" type="date" class="field" />
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button type="button" id="cancel-btn" class="btn-ghost rounded-xl px-4 py-2.5 text-sm font-medium">Cancel</button>
+          <button type="submit" id="submit-btn"
+            class="btn-primary inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white">
+            <i class="fa-solid fa-check"></i> <span id="submit-label">Save</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
